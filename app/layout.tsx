@@ -1,6 +1,7 @@
 import './globals.css';
 import './visual-overrides.css';
 import './rebuild.css';
+import './future.css';
 import './guides/guides.css';
 import type { Metadata } from 'next';
 
