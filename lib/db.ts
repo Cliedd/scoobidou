@@ -42,6 +42,33 @@ export async function ensureSchema() {
       WHERE requirement IS NULL;
     CREATE INDEX IF NOT EXISTS visa_rules_passport_idx ON visa_rules(passport_code);
     CREATE INDEX IF NOT EXISTS visa_rules_destination_idx ON visa_rules(destination_code);
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS saved_trips (
+      id BIGSERIAL PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      passport_code CHAR(2) NOT NULL,
+      destination_code CHAR(2) NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(user_id, passport_code, destination_code)
+    );
+    CREATE TABLE IF NOT EXISTS visa_alerts (
+      id BIGSERIAL PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      passport_code CHAR(2) NOT NULL,
+      destination_code CHAR(2),
+      email_enabled BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
   `);
   return true;
 }
