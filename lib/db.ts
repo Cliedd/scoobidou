@@ -9,6 +9,12 @@ export const db = process.env.DATABASE_URL
 export async function ensureSchema() {
   if (!db) return false;
   await db.query(`
+    CREATE TABLE IF NOT EXISTS countries (
+      code CHAR(2) PRIMARY KEY,
+      name TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'country',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS visa_rules (
       id BIGSERIAL PRIMARY KEY,
       passport_code VARCHAR(3) NOT NULL,
