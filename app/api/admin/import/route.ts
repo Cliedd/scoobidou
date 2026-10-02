@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       const batch = lines.slice(offset, offset + 250).map(line => line.split(',').map(value => value?.trim() || null)).filter(row => row[0] && row[1] && row[2]);
       for (const [passport, destination, requirement, maxStay, verified, source] of batch) {
         await client.query('INSERT INTO countries(code,name) VALUES ($1,$2),($3,$4) ON CONFLICT (code) DO NOTHING', [passport, passport, destination, destination]);
-        await client.query(`INSERT INTO visa_rules(passport_code,destination_code,requirement,max_stay_days,verified_at,source_name,source_url,confidence) VALUES ($1,$2,$3,$4,$5,$6,$7,'dataset') ON CONFLICT (passport_code,destination_code) DO UPDATE SET requirement=EXCLUDED.requirement,max_stay_days=EXCLUDED.max_stay_days,verified_at=EXCLUDED.verified_at,source_name=EXCLUDED.source_name,source_url=EXCLUDED.source_url,updated_at=now()`, [passport, destination, requirement, maxStay ? Number(maxStay) : null, verified || null, source || null, 'https://github.com/maxix7/visa-requirements-dataset']);
+        await client.query(`INSERT INTO visa_rules(passport_code,destination_code,requirement,max_stay_days,verified_at,source_name,source_url,confidence) VALUES ($1,$2,$3,$4,$5,$6,$7,'dataset') ON CONFLICT (passport_code,destination_code) DO UPDATE SET requirement=EXCLUDED.requirement,max_stay_days=EXCLUDED.max_stay_days,verified_at=EXCLUDED.verified_at,source_name=EXCLUDED.source_name,source_url=EXCLUDED.source_url,updated_at=now()`, [passport, destination, requirement, maxStay ? Number(maxStay) : null, verified || null, source || 'maxix7 dataset (source non fournie)', 'https://github.com/maxix7/visa-requirements-dataset']);
         imported++;
       }
     }

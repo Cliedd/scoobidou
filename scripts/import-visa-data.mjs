@@ -23,7 +23,7 @@ try {
     await client.query(`INSERT INTO visa_rules(passport_code,destination_code,requirement,max_stay_days,verified_at,source_name,source_url,confidence)
       VALUES ($1,$2,$3,$4,$5,$6,$7,'dataset')
       ON CONFLICT (passport_code,destination_code) DO UPDATE SET requirement=EXCLUDED.requirement,max_stay_days=EXCLUDED.max_stay_days,verified_at=EXCLUDED.verified_at,source_name=EXCLUDED.source_name,source_url=EXCLUDED.source_url,updated_at=now()`,
-      [passport, destination, requirement, maxStay ? Number(maxStay) : null, verified || null, source || null, sourceUrl]);
+      [passport, destination, requirement, maxStay ? Number(maxStay) : null, verified || null, source || 'maxix7 dataset (source non fournie)', sourceUrl]);
     count++;
   }
   await client.query('COMMIT');
