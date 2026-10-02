@@ -3,7 +3,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ProductPanels } from './components/ProductPanels';
 type Destination={code:string;name:string;status:string;requirement:string;days:string;color:string;source?:string;checked?:string;confidence?:string};
-function Flag({code,fallback}:{code:string;fallback:string}){return <span className="flag-image"><img src={`/flags/${code}.svg`} alt={fallback}/><span>{fallback}</span></span>}
+function Flag({code,fallback}:{code:string;fallback:string}){
+ const [failed,setFailed]=useState(false);
+ useEffect(()=>setFailed(false),[code]);
+ return <span className="flag-image" aria-label={fallback}>{failed?<span className="flag-fallback">{fallback}</span>:<img src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`} alt="" width="28" height="20" loading="lazy" onError={()=>setFailed(true)}/>}</span>
+}
 function Row({d,onClick}:{d:Destination;onClick:()=>void}){return <button className="destination" onClick={onClick}><span className="country-flag"><Flag code={d.code} fallback={d.code.toUpperCase()}/></span><span className="destination-info"><b>{d.name} <small className="country-code">{d.code.toUpperCase()}</small></b><small>{d.status} · {d.days}</small></span><span className={'status-dot '+d.color}/></button>}
 export default function Home(){
  const [query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[view,setView]=useState<'map'|'list'>('map'),[tab,setTab]=useState('Explorer'),[countries,setCountries]=useState<Destination[]>([]),[selected,setSelected]=useState<Destination|null>(null),[loading,setLoading]=useState(true);
