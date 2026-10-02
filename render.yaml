@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: passportly
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 18.19.1
+      - key: DATABASE_URL
+        sync: false
