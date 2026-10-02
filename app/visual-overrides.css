@@ -7,3 +7,16 @@ a{color:inherit;text-decoration:none}
 .account-form input{border-color:#d8ddea;border-radius:10px}.primary{background:#26304a;border-radius:10px}.primary:hover{background:#3b4970}
 .source a{float:right;color:var(--coral);font-weight:600}.flag-image{object-fit:cover;border-radius:3px;display:block}.flag-fallback{display:grid;place-items:center;min-width:28px;height:20px;border-radius:3px;background:#ecebff;color:#59627b;font:600 9px 'DM Mono'}
 .fact-detail{font-size:10px;color:var(--muted);line-height:1.4}.source-warning{color:#b27a2e!important}.source-official{color:var(--teal)!important}
+
+/* High-contrast product pass: make the new visual language unmistakable. */
+body{background:#f7f7fb;color:#202638;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.topbar{height:72px;background:#fff;border-bottom:1px solid #e5e8f0;padding-inline:6%;gap:54px}
+.brand{font-size:20px}.brand-mark{background:#26304a;border-radius:10px}
+.topbar nav{gap:10px}.topbar nav button{height:auto;padding:11px 15px;border:0;border-radius:999px;font-size:13px}.topbar nav button.active{background:#ecebff;color:#4f5791;border:0}
+.login{border:0;background:#26304a;color:white!important;border-radius:999px;padding:11px 20px}.login:hover{background:#ed756c;color:#fff!important}
+.hero{min-height:470px;padding:78px 9%;background:#dff7ef}.hero h1{font-size:64px;color:#202638}.hero h1 em{color:#23756c}.hero p{color:#536b79}.searchbar{border:0;border-radius:14px;box-shadow:0 12px 30px #4c60701c}.globe{background:#b8e8d7;border:14px solid #d4f3e7}
+.stats{box-shadow:0 8px 30px #39445c0c}.stats strong{color:#26304a}.workspace,.lower{background:#f7f7fb}.section-heading h2,.lower-heading h2{color:#202638}.view-toggle{background:#e9eaf2;border-radius:999px}.view-toggle button{border-radius:999px}.view-toggle .selected{color:#4f5791}
+.explorer-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}.explorer-filters button{padding:9px 16px}.explorer-filters button.active{background:#ed756c;border-color:#ed756c}
+.map{background:#edf5f4;border:0;border-radius:18px;box-shadow:0 12px 35px #33455b12}.map-grid{background-color:#edf5f4}.map-toolbar button{border-radius:9px}.side-panel{border:0;border-radius:18px;box-shadow:0 12px 35px #33455b12}.destination{padding:16px 0}.country-flag{width:38px;height:28px;display:grid;place-items:center}.compare-cta{background:#ecebff;color:#4f5791;border-radius:12px}
+.feature-card{border:0;border-radius:18px;box-shadow:0 12px 30px #33455b0d}.feature-card:nth-child(2){background:#fff5dd}.feature-card:nth-child(3){background:#e4f7f0}.feature-icon{border-radius:10px}.modal{border-radius:20px}.modal-backdrop{background:#20263899}.primary{background:#ed756c}.primary:hover{background:#d95d58}
+.account-auth{border:0;border-radius:22px;padding:48px;box-shadow:0 18px 55px #33455b18}.auth-tabs button.active{color:#ed756c;border-color:#ed756c}
