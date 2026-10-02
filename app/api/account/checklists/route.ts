@@ -14,7 +14,7 @@ export async function PUT(request: Request) {
   if (!user || !db) return NextResponse.json({ error: 'Connexion requise.' }, { status: 401 });
   const body = await request.json().catch(() => ({}));
   const slug = String(body.guideSlug || '').trim();
-  const checked = Array.isArray(body.checked) ? body.checked.filter((n: unknown) => Number.isInteger(n)) : [];
+  const checked = Array.isArray(body.checked) ? body.checked.filter((n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < 1000).slice(0, 1000) : [];
   if (!slug || slug.length > 100) return NextResponse.json({ error: 'Guide invalide.' }, { status: 400 });
   await ensureSchema();
   const result = await db.query(`INSERT INTO saved_checklists(user_id,guide_slug,checked,updated_at) VALUES($1,$2,$3::jsonb,now())

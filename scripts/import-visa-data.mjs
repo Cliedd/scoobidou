@@ -23,8 +23,9 @@ try {
       VALUES ($1,$2,$3,$4,$5,$6,$7,'dataset')
       ON CONFLICT (passport_code,destination_code) DO UPDATE SET requirement=EXCLUDED.requirement,max_stay_days=EXCLUDED.max_stay_days,verified_at=EXCLUDED.verified_at,source_name=EXCLUDED.source_name,source_url=EXCLUDED.source_url,updated_at=now()`,
       [passport, destination, requirement, maxStay ? Number(maxStay) : null, verified || null, source || 'maxix7 dataset (source non fournie)', sourceUrl]);
-    if (previous.rows[0] && (previous.rows[0].requirement !== requirement || previous.rows[0].max_stay_days !== (maxStay ? Number(maxStay) : null))) {
-      await client.query('INSERT INTO visa_rule_history(visa_rule_id,requirement,max_stay_days,source_url,changed_by) VALUES ($1,$2,$3,$4,$5)', [previous.rows[0].id, previous.rows[0].requirement, previous.rows[0].max_stay_days, previous.rows[0].source_url, 'import']);
+    const nextMaxStay = maxStay ? Number(maxStay) : null;
+    if (previous.rows[0] && (previous.rows[0].requirement !== requirement || previous.rows[0].max_stay_days !== nextMaxStay || previous.rows[0].source_url !== (source || null) || String(previous.rows[0].verified_at || '').slice(0, 10) !== (verified || ''))) {
+      await client.query('INSERT INTO visa_rule_history(visa_rule_id,requirement,max_stay_days,source_url,source_name,verified_at,confidence,changed_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', [previous.rows[0].id, previous.rows[0].requirement, previous.rows[0].max_stay_days, previous.rows[0].source_url, previous.rows[0].source_name, previous.rows[0].verified_at, previous.rows[0].confidence, 'import']);
     }
     count++;
   }

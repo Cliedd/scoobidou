@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto';
+import { db, ensureSchema } from '../../../../lib/db';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +18,8 @@ export async function POST(request: Request) {
   const payload = await request.text();
   if (!validSignature(payload, signature, secret)) return Response.json({ error: { code: 'invalid_signature', message: 'Invalid Stripe signature.' } }, { status: 400 });
   const event = JSON.parse(payload) as { id?: string; type?: string };
-  // Entitlements are intentionally not inferred here: connect a billing store before enabling paid access.
+  if (!event.id || !event.type) return Response.json({ error: { code: 'invalid_event', message: 'Stripe event is incomplete.' } }, { status: 400 });
+  if (db) { await ensureSchema(); const inserted = await db.query('INSERT INTO stripe_events(id,type,payload) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING id', [event.id, event.type, event]); if (!inserted.rowCount) return Response.json({ received: true, duplicate: true }); }
   console.info('Stripe event received', { id: event.id, type: event.type });
   return Response.json({ received: true, id: event.id });
 }

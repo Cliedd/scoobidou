@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+const manifest = JSON.parse(fs.readFileSync(new URL('../data/visa-data-manifest.json', import.meta.url), 'utf8'));
 
 const file = process.argv[2] || new URL('../data/visa-requirements.csv', import.meta.url);
 const text = fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
@@ -51,12 +52,14 @@ rows.forEach((values, index) => {
   if (!source) missingSource++;
 });
 if (!rows.length) errors.push('Dataset is empty');
-if (passports.size !== 198) warnings.push(`Expected 198 passports, found ${passports.size}`);
-if (destinations.size !== 227) warnings.push(`Expected 227 destinations, found ${destinations.size}`);
+if (rows.length !== manifest.expected_rows) errors.push(`Expected ${manifest.expected_rows} rows, found ${rows.length}`);
+if (pairs.size !== manifest.expected_unique_pairs) errors.push(`Expected ${manifest.expected_unique_pairs} unique pairs, found ${pairs.size}`);
+if (passports.size !== manifest.expected_passports) errors.push(`Expected ${manifest.expected_passports} passports, found ${passports.size}`);
+if (destinations.size !== manifest.expected_destinations) errors.push(`Expected ${manifest.expected_destinations} destinations, found ${destinations.size}`);
 if (missingSource) warnings.push(`${missingSource}/${rows.length} rows have no source URL`);
 const missingVerified = rows.filter(r => !r[4]).length;
 if (missingVerified) warnings.push(`${missingVerified}/${rows.length} rows have no verification date`);
 
-const result = { file: String(file), rows: rows.length, passports: passports.size, destinations: destinations.size, unique_pairs: pairs.size, errors, warnings };
+const result = { file: String(file), manifest, rows: rows.length, passports: passports.size, destinations: destinations.size, unique_pairs: pairs.size, errors, warnings };
 console.log(JSON.stringify(result, null, 2));
 if (errors.length) process.exitCode = 1;

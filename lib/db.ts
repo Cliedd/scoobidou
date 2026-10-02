@@ -108,6 +108,15 @@ export async function ensureSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS api_usage_key_date_idx ON api_usage(api_key_id, created_at);
+    CREATE TABLE IF NOT EXISTS stripe_events (
+      id TEXT PRIMARY KEY, type TEXT NOT NULL, payload JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS stripe_api_keys (
+      api_key_id UUID PRIMARY KEY REFERENCES api_keys(id) ON DELETE CASCADE,
+      stripe_customer_id TEXT NOT NULL, stripe_subscription_id TEXT UNIQUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
     CREATE TABLE IF NOT EXISTS monitor_sources (
       id BIGSERIAL PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL UNIQUE,
       parser TEXT NOT NULL DEFAULT 'text', enabled BOOLEAN NOT NULL DEFAULT true,
@@ -136,6 +145,13 @@ export async function ensureSchema() {
       proposal_id BIGINT NOT NULL REFERENCES monitor_proposals(id) ON DELETE CASCADE,
       email TEXT NOT NULL, delivered_at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE(user_id, proposal_id)
     );
+    CREATE TABLE IF NOT EXISTS notification_attempts (
+      id BIGSERIAL PRIMARY KEY, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      proposal_id BIGINT NOT NULL REFERENCES monitor_proposals(id) ON DELETE CASCADE,
+      email TEXT NOT NULL, provider TEXT NOT NULL DEFAULT 'resend', sent BOOLEAN NOT NULL,
+      reason TEXT, provider_detail TEXT, attempted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS notification_attempts_proposal_idx ON notification_attempts(proposal_id, attempted_at DESC);
     CREATE TABLE IF NOT EXISTS saved_checklists (
       id BIGSERIAL PRIMARY KEY, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       guide_slug TEXT NOT NULL, checked JSONB NOT NULL DEFAULT '[]'::jsonb,

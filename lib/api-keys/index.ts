@@ -28,6 +28,11 @@ export async function revokeApiKey(id: string) {
   return null;
 }
 
+export async function listApiKeys() {
+  if (db) { await ensureSchema(); const result = await db.query('SELECT id,name,plan,key_prefix,active,created_at,last_used_at FROM api_keys ORDER BY created_at DESC'); return result.rows; }
+  return Array.from(memoryKeys.values()).map((key) => ({ ...key, active: true }));
+}
+
 export async function rotateApiKey(id: string) {
   if (db) {
     await ensureSchema();

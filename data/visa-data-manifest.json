@@ -1,0 +1,8 @@
+{
+  "dataset": "maxix7/visa-requirements-dataset",
+  "expected_passports": 197,
+  "expected_destinations": 197,
+  "expected_rows": 38612,
+  "expected_unique_pairs": 38612,
+  "scope_note": "Counts describe the checked CSV snapshot, not all ISO 3166-1 countries. XK is retained because it is present in the source dataset."
+}

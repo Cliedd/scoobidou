@@ -21,9 +21,12 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 const daysBetween = (start: Date, end: Date) => end < start ? 0 : Math.floor((end.getTime() - start.getTime()) / DAY) + 1;
 
 export function calculateSchengen(stays: Stay[], reference: string | Date = new Date()): SchengenResult {
+  if (!Array.isArray(stays) || stays.length > 100) throw new Error('Le nombre de séjours doit être compris entre 0 et 100');
   const ref = dateOnly(reference);
   const windowStart = new Date(ref.getTime() - 179 * DAY);
   const normalized = stays.map((stay) => {
+    if (!stay || typeof stay.start !== 'string' || typeof stay.end !== 'string') throw new Error('Séjour invalide');
+    if (stay.country !== undefined && (typeof stay.country !== 'string' || stay.country.length > 100)) throw new Error('Pays invalide');
     const start = dateOnly(stay.start); const end = dateOnly(stay.end);
     if (end < start) throw new Error('La date de fin doit être postérieure au début');
     const clippedStart = start > windowStart ? start : windowStart;

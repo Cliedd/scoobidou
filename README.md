@@ -34,3 +34,18 @@ npm run data:import
 ```
 
 L’import crée les tables PostgreSQL et conserve la source, la date de vérification et l’historique structurel de chaque règle.
+
+## Checklist de production Render
+
+Dans le service web, renseigner dans le Dashboard les variables marquées `sync: false` dans `render.yaml` :
+
+- `DATABASE_URL` : URL PostgreSQL interne Render, dans la même région que le service ;
+- `AUTH_SECRET`, `ADMIN_BOOTSTRAP_TOKEN`, `IMPORT_TOKEN` et `API_KEY_ADMIN_TOKEN` : secrets aléatoires distincts ;
+- `NEXT_PUBLIC_APP_URL` : URL HTTPS publique finale ;
+- `STRIPE_SECRET_KEY`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` et `STRIPE_WEBHOOK_SECRET` si Stripe est activé.
+
+Le cron `passportly-monitor` nécessite en plus `MONITOR_SOURCES_JSON`, `EMAIL_FROM` et `RESEND_API_KEY`. Son horaire `15 */6 * * *` est interprété en UTC. Les erreurs `email_provider_not_configured` sont attendues tant que Resend n’est pas configuré.
+
+Après le premier déploiement, vérifier `GET /api/health`, exécuter l’import protégé avec `IMPORT_TOKEN`, puis créer le premier administrateur via `/api/admin/setup` avec `ADMIN_BOOTSTRAP_TOKEN`. Révoquer ou remplacer ces tokens bootstrap après usage.
+
+Les migrations SQL sont idempotentes, mais Render n’exécute pas automatiquement `db/migrations/*.sql` : l’import initial crée le schéma et `lib/db.ts` complète les tables nécessaires à l’exécution. Configurer et vérifier les sauvegardes PostgreSQL dans le Dashboard Render ; aucune sauvegarde applicative n’est définie dans le dépôt.
