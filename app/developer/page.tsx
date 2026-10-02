@@ -7,12 +7,13 @@ export default function DeveloperPage() {
       <h2>Authentification</h2>
       <pre>{'curl -H "x-api-key: pk_live_…" \\\n+  https://passportly.example/api/v1/visa?passport=CM'}</pre>
       <h2>Plans et quotas horaires</h2>
-      <p>Free: 100 · Pro: 10 000 · Business: 100 000 requêtes/heure. Les réponses incluent un <code>requestId</code>.</p>
+      <p>Free: 100 · Pro: 10 000 · Business: 100 000 requêtes/heure. Les réponses incluent un <code>requestId</code> et le quota est glissant sur une heure.</p>
+      <p>Gestion interne : <code>POST /api/v1/keys</code> crée, <code>PUT /api/v1/keys?id=…</code> fait tourner et <code>DELETE /api/v1/keys?id=…</code> révoque une clé via <code>x-admin-token</code>. La clé brute n’est affichée qu’à la création/rotation.</p>
       <h2>Endpoints</h2>
       <ul>
         <li><code>GET /api/v1/visa</code></li><li><code>GET /api/v1/map</code></li><li><code>GET /api/v1/compare</code></li><li><code>GET /api/v1/countries</code></li><li><code>GET /api/v1/guides</code></li>
       </ul>
-      <p>Spécification : <a href="/api/v1/openapi.json">OpenAPI 3.0</a>. Widget : utilisez les endpoints ci-dessus; un script officiel sera publié sous licence commerciale.</p>
+      <p>Spécification : <a href="/api/v1/openapi.json">OpenAPI 3.0</a>. Widget : intégrez un composant côté serveur qui appelle l’API v1 avec votre clé; ne l’exposez jamais dans le navigateur.</p>
       <h2>Erreurs</h2>
       <p>Format stable : <code>{'{"error":{"code":"…","message":"…"}}'}</code>. Codes : <code>invalid_api_key</code>, <code>invalid_parameter</code>, <code>rate_limit_exceeded</code>.</p>
     </main>

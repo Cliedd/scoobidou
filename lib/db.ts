@@ -50,10 +50,16 @@ export async function ensureSchema() {
     );
     ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+    DO $$ BEGIN ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('user','editor','admin')); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,
       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       expires_at TIMESTAMPTZ NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      bucket TEXT PRIMARY KEY,
+      count INTEGER NOT NULL DEFAULT 0,
+      window_started_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE TABLE IF NOT EXISTS saved_trips (
       id BIGSERIAL PRIMARY KEY,
@@ -81,6 +87,7 @@ export async function ensureSchema() {
       before_data JSONB, after_data JSONB, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS admin_audit_created_idx ON admin_audit_log(created_at DESC);
+    CREATE INDEX IF NOT EXISTS admin_audit_entity_idx ON admin_audit_log(entity_type, entity_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS visa_rules_review_status_idx ON visa_rules(review_status);
     CREATE TABLE IF NOT EXISTS api_keys (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -128,6 +135,22 @@ export async function ensureSchema() {
       id BIGSERIAL PRIMARY KEY, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       proposal_id BIGINT NOT NULL REFERENCES monitor_proposals(id) ON DELETE CASCADE,
       email TEXT NOT NULL, delivered_at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE(user_id, proposal_id)
+    );
+    CREATE TABLE IF NOT EXISTS saved_checklists (
+      id BIGSERIAL PRIMARY KEY, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      guide_slug TEXT NOT NULL, checked JSONB NOT NULL DEFAULT '[]'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE(user_id, guide_slug)
+    );
+    CREATE TABLE IF NOT EXISTS saved_itineraries (
+      id BIGSERIAL PRIMARY KEY, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL DEFAULT 'Mon itinéraire', stays JSONB NOT NULL, reference_date DATE NOT NULL,
+      calculation JSONB, updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS testimonials (
+      id BIGSERIAL PRIMARY KEY, user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      author_name TEXT NOT NULL, destination TEXT NOT NULL, content TEXT NOT NULL,
+      rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5), status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
   return true;

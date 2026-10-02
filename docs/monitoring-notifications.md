@@ -1,9 +1,9 @@
 # Veille et notifications
 
-Le cron Render `passportly-monitor` s’exécute toutes les six heures à la minute 15 UTC. Il récupère les sources publiques de `MONITOR_SOURCES_JSON`, calcule une empreinte SHA-256 et conserve les snapshots.
+Le cron Render `passportly-monitor` s’exécute toutes les six heures à la minute 15 UTC (Render interprète les expressions en UTC). Il récupère uniquement les sources HTTP(S) activées de `MONITOR_SOURCES_JSON`, calcule une empreinte SHA-256 et conserve les snapshots. Utiliser des URL de sources officielles publiques et stables ; le contenu est normalisé par lignes avant comparaison.
 
-Tout changement crée une proposition `pending` avec un diff. La validation manuelle se fait via `GET/PATCH /api/monitor/proposals` et nécessite un compte `editor` ou `admin`. `GET/PATCH /api/notifications/preferences` permet à chaque utilisateur connecté d’activer ou désactiver les emails et le digest.
+Tout changement crée une proposition `pending` avec un diff. La validation manuelle se fait via `GET/PATCH /api/monitor/proposals` et nécessite un compte `editor` ou `admin` ; aucune proposition n’est automatiquement appliquée aux règles. `GET/PATCH /api/notifications/preferences` permet à chaque utilisateur connecté d’activer ou désactiver les emails et le digest. `DELETE /api/notifications/preferences` désinscrit immédiatement l’utilisateur (`email_enabled=false`, `digest_enabled=false`).
 
-Configurer dans Render `DATABASE_URL`, `MONITOR_SOURCES_JSON`, `EMAIL_FROM` et `RESEND_API_KEY`. Aucun secret ne doit être commité. Sans fournisseur email, les propositions restent stockées pour validation.
+Configurer dans Render `DATABASE_URL`, `MONITOR_SOURCES_JSON`, `EMAIL_FROM` et `RESEND_API_KEY` comme variables secrètes ou saisies dans le Dashboard ; aucun secret ne doit être commité. Sans fournisseur email, les propositions restent stockées pour validation et le cron indique `email_provider_not_configured` dans ses logs. Les réponses HTTP et erreurs réseau Resend sont journalisées avec l’identifiant de proposition ; les envois réussis sont inscrits dans `notification_deliveries` et ne sont pas renvoyés.
 
-La migration dédiée est `db/migrations/001_monitor_notifications.sql`; elle doit être exécutée avant le premier cron. `GET /api/monitor/sources` expose les sources et leurs empreintes.
+La migration dédiée est `db/migrations/001_monitor_notifications.sql`; elle doit être exécutée avant le premier cron (ou via le mécanisme `ensureSchema` déjà utilisé par l’application). `GET /api/monitor/sources` expose les sources activées et leurs empreintes. `digest_enabled` est conservé comme préférence pour un futur digest ; le cron actuel envoie des alertes immédiates pour les utilisateurs dont `email_enabled=true`.

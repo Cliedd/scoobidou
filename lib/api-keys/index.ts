@@ -22,6 +22,24 @@ export async function createApiKey(name: string, plan: ApiPlan = 'free') {
   return { key: raw, ...record };
 }
 
+export async function revokeApiKey(id: string) {
+  if (db) { await ensureSchema(); const result = await db.query('UPDATE api_keys SET active=false WHERE id=$1 AND active=true RETURNING id,name,plan,key_prefix', [id]); return result.rows[0] || null; }
+  for (const [hash, record] of Array.from(memoryKeys.entries())) if (record.id === id) { memoryKeys.delete(hash); return record; }
+  return null;
+}
+
+export async function rotateApiKey(id: string) {
+  if (db) {
+    await ensureSchema();
+    const result = await db.query('SELECT name,plan FROM api_keys WHERE id=$1 AND active=true', [id]);
+    const current = result.rows[0]; if (!current) return null;
+    await db.query('UPDATE api_keys SET active=false WHERE id=$1', [id]);
+    return createApiKey(current.name, current.plan);
+  }
+  const current = Array.from(memoryKeys.values()).find(record => record.id === id);
+  if (!current) return null; await revokeApiKey(id); return createApiKey(current.name, current.plan);
+}
+
 async function findKey(raw: string): Promise<KeyRecord | null> {
   if (!raw.startsWith('pk_live_')) return null;
   if (db) { await ensureSchema(); const result = await db.query('SELECT id,name,plan,key_prefix FROM api_keys WHERE key_hash=$1 AND active=true', [hashKey(raw)]); return result.rows[0] || null; }
@@ -37,8 +55,9 @@ export async function authenticate(request: Request) {
   let timestamps: number[];
   if (db) { const result = await db.query("SELECT EXTRACT(EPOCH FROM created_at) * 1000 AS ts FROM api_usage WHERE api_key_id=$1 AND created_at > now() - interval '1 hour'", [key.id]); timestamps = result.rows.map(row => Number(row.ts)); }
   else { timestamps = (memoryUsage.get(key.id) || []).filter(ts => ts > windowStart); memoryUsage.set(key.id, timestamps); }
-  if (timestamps.length >= PLAN_LIMITS[key.plan]) return { error: apiError('rate_limit_exceeded', `Hourly ${key.plan} quota exceeded.`, 429, { limit: PLAN_LIMITS[key.plan], reset: new Date(now + 60 * 60 * 1000).toISOString() }) };
-  return { key, requestId: requestId() };
+  const id = requestId();
+  if (timestamps.length >= PLAN_LIMITS[key.plan]) return { error: apiError('rate_limit_exceeded', `Hourly ${key.plan} quota exceeded.`, 429, { limit: PLAN_LIMITS[key.plan], reset: new Date(now + 60 * 60 * 1000).toISOString(), requestId: id }) };
+  return { key, requestId: id };
 }
 
 export async function logUsage(key: KeyRecord, requestIdValue: string, endpoint: string, status: number) {

@@ -43,3 +43,10 @@ export async function endSession() {
 
 export const normalizeEmail = (email: string) => email.trim().toLowerCase();
 export const validPassword = (password: string) => typeof password === 'string' && password.length >= 8;
+
+export async function consumeRateLimit(bucket: string, limit: number, windowSeconds = 900) {
+  if (!db) return true;
+  await ensureSchema();
+  const result = await db.query(`INSERT INTO rate_limits(bucket,count,window_started_at) VALUES($1,1,now()) ON CONFLICT(bucket) DO UPDATE SET count=CASE WHEN rate_limits.window_started_at <= now() - ($2::int * interval '1 second') THEN 1 ELSE rate_limits.count + 1 END, window_started_at=CASE WHEN rate_limits.window_started_at <= now() - ($2::int * interval '1 second') THEN now() ELSE rate_limits.window_started_at END RETURNING count`, [bucket, windowSeconds]);
+  return Number(result.rows[0]?.count || 0) <= limit;
+}
