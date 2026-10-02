@@ -30,6 +30,16 @@ export async function ensureSchema() {
       updated_at TIMESTAMPTZ DEFAULT NOW(),
       UNIQUE(passport_code, destination_code)
     );
+    ALTER TABLE visa_rules ADD COLUMN IF NOT EXISTS requirement TEXT;
+    ALTER TABLE visa_rules ADD COLUMN IF NOT EXISTS max_stay_days INTEGER;
+    ALTER TABLE visa_rules ADD COLUMN IF NOT EXISTS verified_at DATE;
+    ALTER TABLE visa_rules ALTER COLUMN status DROP NOT NULL;
+    UPDATE visa_rules SET requirement = CASE
+      WHEN status = 'Visa à l’arrivée' THEN 'visa_on_arrival'
+      WHEN status = 'eTA obligatoire' THEN 'eta'
+      WHEN status = 'Visa requis' THEN 'visa_required'
+      ELSE 'visa_required' END
+      WHERE requirement IS NULL;
     CREATE INDEX IF NOT EXISTS visa_rules_passport_idx ON visa_rules(passport_code);
     CREATE INDEX IF NOT EXISTS visa_rules_destination_idx ON visa_rules(destination_code);
   `);
