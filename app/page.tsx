@@ -13,7 +13,7 @@ const destinations: Destination[] = [
 ];
 
 function Icon({ children }: { children: React.ReactNode }) { return <span className="icon">{children}</span>; }
-function Flag({ code, fallback }: { code: string; fallback: string }) { return <span className="flag-image"><img src={`https://flagcdn.com/w40/${code}.png`} alt={fallback} /><span>{fallback}</span></span>; }
+function Flag({ code, fallback }: { code: string; fallback: string }) { return <span className="flag-image"><img src={`/flags/${code}.svg`} alt={fallback} /><span>{fallback}</span></span>; }
 
 export default function Home() {
   const [query, setQuery] = useState(''); const [selected, setSelected] = useState<Destination | null>(null); const [tab, setTab] = useState('Explorer'); const [saved, setSaved] = useState(false);
