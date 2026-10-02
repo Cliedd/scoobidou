@@ -20,3 +20,12 @@ export async function POST(request: Request) {
   const result = await db.query('INSERT INTO visa_alerts(user_id,passport_code,destination_code) VALUES($1,$2,$3) RETURNING *', [user.id, passport, destination]);
   return NextResponse.json({ data: result.rows[0] }, { status: 201 });
 }
+
+export async function DELETE(request: Request) {
+  const user = await currentUser();
+  if (!user || !db) return NextResponse.json({ error: 'Connexion requise.' }, { status: 401 });
+  const body = await request.json().catch(() => ({})); const id = Number(body.id);
+  if (!Number.isSafeInteger(id) || id < 1) return NextResponse.json({ error: 'Alerte invalide.' }, { status: 400 });
+  await db.query('DELETE FROM visa_alerts WHERE id=$1 AND user_id=$2', [id, user.id]);
+  return NextResponse.json({ ok: true });
+}

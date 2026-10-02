@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   if (!db) return NextResponse.json({ error: 'Base de données indisponible.' }, { status: 503 });
   await ensureSchema();
   try {
-    const result = await db.query('INSERT INTO users(email,password_hash) VALUES($1,$2) RETURNING id,email', [email, passwordDigest(body.password)]);
+    const result = await db.query("INSERT INTO users(email,password_hash,role) VALUES($1,$2,'user') RETURNING id,email,role", [email, passwordDigest(body.password)]);
     await startSession(result.rows[0].id);
     return NextResponse.json({ user: result.rows[0] }, { status: 201 });
   } catch (error: unknown) {

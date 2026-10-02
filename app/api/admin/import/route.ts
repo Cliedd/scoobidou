@@ -2,12 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
 import { db, ensureSchema } from '../../../../lib/db';
+import { requireRole, audit } from '../../../../lib/admin';
 
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
   const token = request.headers.get('x-import-token');
-  if (!process.env.IMPORT_TOKEN || token !== process.env.IMPORT_TOKEN) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const admin = await requireRole(['admin']);
+  if ((!process.env.IMPORT_TOKEN || token !== process.env.IMPORT_TOKEN) && !admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!db) return NextResponse.json({ error: 'DATABASE_URL is not configured' }, { status: 503 });
   await ensureSchema();
   const csv = await fs.readFile(path.join(process.cwd(), 'data/visa-requirements.csv'), 'utf8');
@@ -25,6 +27,7 @@ export async function POST(request: Request) {
       }
     }
     await client.query('COMMIT');
+    if (admin) await audit(admin.id, 'import', 'visa_rules', undefined, undefined, { imported, source: 'maxix7/visa-requirements-dataset' });
     return NextResponse.json({ ok: true, imported, source: 'maxix7/visa-requirements-dataset' });
   } catch (error) { await client.query('ROLLBACK'); console.error(error); return NextResponse.json({ error: 'Import failed' }, { status: 500 }); }
   finally { client.release(); }

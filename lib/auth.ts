@@ -23,7 +23,7 @@ export async function currentUser() {
   await ensureSchema();
   const token = cookies().get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const result = await db.query('SELECT u.id, u.email FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=$1 AND s.expires_at > now()', [token]);
+  const result = await db.query("SELECT u.id, u.email, COALESCE(u.role, 'user') AS role FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=$1 AND s.expires_at > now()", [token]);
   return result.rows[0] || null;
 }
 
@@ -31,14 +31,14 @@ export async function startSession(userId: string) {
   if (!db) return false;
   const token = randomBytes(32).toString('hex');
   await db.query("INSERT INTO sessions(token,user_id,expires_at) VALUES($1,$2,now()+interval '30 days')", [token, userId]);
-  cookies().set(SESSION_COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 });
+  cookies().set(SESSION_COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/', maxAge: 60 * 60 * 24 * 30 });
   return true;
 }
 
 export async function endSession() {
   const token = cookies().get(SESSION_COOKIE)?.value;
   if (db && token) await db.query('DELETE FROM sessions WHERE token=$1', [token]);
-  cookies().set(SESSION_COOKIE, '', { httpOnly: true, expires: new Date(0), path: '/' });
+  cookies().set(SESSION_COOKIE, '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', expires: new Date(0), path: '/' });
 }
 
 export const normalizeEmail = (email: string) => email.trim().toLowerCase();

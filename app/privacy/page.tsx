@@ -1,0 +1,3 @@
+import Link from 'next/link';
+export const metadata = { title: 'Politique de confidentialité — Passportly' };
+export default function PrivacyPage() { return <main className="legal-page"><Link href="/">← Passportly</Link><h1>Politique de confidentialité</h1><p>Dernière mise à jour : 2 octobre 2026.</p><h2>Données collectées</h2><p>Nous traitons votre adresse email, vos favoris et vos alertes uniquement pour fournir votre espace personnel. Les mots de passe sont hachés et les sessions utilisent des cookies HTTP-only.</p><h2>Vos droits</h2><p>Vous pouvez exporter ou supprimer votre compte depuis votre espace. Pour toute demande RGPD, contactez l’équipe Passportly.</p></main>; }

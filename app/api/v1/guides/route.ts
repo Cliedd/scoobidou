@@ -1,0 +1,3 @@
+import { handleApi } from '../_handler';
+const guides = [{ slug: 'visa-application', title: 'Préparer une demande de visa', summary: 'Checklist générale : passeport, justificatifs, assurance et preuve de ressources.' }, { slug: 'schengen-90-180', title: 'Comprendre la règle 90/180', summary: 'Calculer les jours autorisés dans l’espace Schengen sur une fenêtre glissante.' }];
+export async function GET(request: Request) { const slug = new URL(request.url).searchParams.get('slug'); return handleApi(request, '/v1/guides', async () => slug ? guides.find(g => g.slug === slug) || { error: { code: 'not_found', message: 'Guide not found.' } } : guides); }

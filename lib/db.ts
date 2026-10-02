@@ -48,6 +48,8 @@ export async function ensureSchema() {
       password_hash TEXT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,
       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -68,6 +70,64 @@ export async function ensureSchema() {
       destination_code CHAR(2),
       email_enabled BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    ALTER TABLE visa_rules ADD COLUMN IF NOT EXISTS review_status TEXT NOT NULL DEFAULT 'approved';
+    ALTER TABLE visa_rules ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES users(id);
+    ALTER TABLE visa_rules ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+    CREATE TABLE IF NOT EXISTS admin_audit_log (
+      id BIGSERIAL PRIMARY KEY,
+      actor_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT,
+      before_data JSONB, after_data JSONB, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS admin_audit_created_idx ON admin_audit_log(created_at DESC);
+    CREATE INDEX IF NOT EXISTS visa_rules_review_status_idx ON visa_rules(review_status);
+    CREATE TABLE IF NOT EXISTS api_keys (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL,
+      key_prefix TEXT NOT NULL,
+      key_hash TEXT UNIQUE NOT NULL,
+      plan TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free','pro','business')),
+      active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      last_used_at TIMESTAMPTZ
+    );
+    CREATE TABLE IF NOT EXISTS api_usage (
+      id BIGSERIAL PRIMARY KEY,
+      api_key_id UUID REFERENCES api_keys(id) ON DELETE SET NULL,
+      request_id TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      status_code INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS api_usage_key_date_idx ON api_usage(api_key_id, created_at);
+    CREATE TABLE IF NOT EXISTS monitor_sources (
+      id BIGSERIAL PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL UNIQUE,
+      parser TEXT NOT NULL DEFAULT 'text', enabled BOOLEAN NOT NULL DEFAULT true,
+      last_checked_at TIMESTAMPTZ, last_fingerprint TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS monitor_snapshots (
+      id BIGSERIAL PRIMARY KEY, source_id BIGINT NOT NULL REFERENCES monitor_sources(id) ON DELETE CASCADE,
+      fingerprint TEXT NOT NULL, content TEXT NOT NULL, fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(source_id, fingerprint)
+    );
+    CREATE TABLE IF NOT EXISTS monitor_proposals (
+      id BIGSERIAL PRIMARY KEY, source_id BIGINT NOT NULL REFERENCES monitor_sources(id) ON DELETE CASCADE,
+      previous_snapshot_id BIGINT REFERENCES monitor_snapshots(id), current_snapshot_id BIGINT NOT NULL REFERENCES monitor_snapshots(id),
+      diff TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+      reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL, reviewed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS monitor_proposals_status_idx ON monitor_proposals(status, created_at DESC);
+    CREATE TABLE IF NOT EXISTS notification_preferences (
+      user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      email_enabled BOOLEAN NOT NULL DEFAULT true, digest_enabled BOOLEAN NOT NULL DEFAULT true,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS notification_deliveries (
+      id BIGSERIAL PRIMARY KEY, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      proposal_id BIGINT NOT NULL REFERENCES monitor_proposals(id) ON DELETE CASCADE,
+      email TEXT NOT NULL, delivered_at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE(user_id, proposal_id)
     );
   `);
   return true;

@@ -1,0 +1,3 @@
+import { handleApi } from '../_handler';
+import { visaRules } from '../../../../lib/api-keys/data';
+export async function GET(request: Request) { const u = new URL(request.url); const left = u.searchParams.get('left')?.toUpperCase() || ''; const right = u.searchParams.get('right')?.toUpperCase() || ''; if (!/^[A-Z]{2}$/.test(left) || !/^[A-Z]{2}$/.test(right)) return Response.json({ error: { code: 'invalid_parameter', message: 'left and right must be two-letter ISO codes.' } }, { status: 400 }); return handleApi(request, '/v1/compare', async () => ({ passports: [left, right], data: await Promise.all([visaRules(left), visaRules(right)]) })); }

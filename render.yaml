@@ -12,3 +12,22 @@ services:
         value: 18.19.1
       - key: DATABASE_URL
         sync: false
+  - type: cron
+    name: passportly-monitor
+    runtime: node
+    plan: starter
+    branch: main
+    schedule: "15 */6 * * *"
+    buildCommand: npm install
+    startCommand: npm run monitor:run
+    envVars:
+      - key: NODE_VERSION
+        value: 18.19.1
+      - key: DATABASE_URL
+        sync: false
+      - key: MONITOR_SOURCES_JSON
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
