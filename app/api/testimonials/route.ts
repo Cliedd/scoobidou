@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '../../../lib/auth';
 import { db, ensureSchema } from '../../../lib/db';
+export const dynamic = 'force-dynamic';
 export async function GET() { if (!db) return NextResponse.json({ data: [] }); await ensureSchema(); const r = await db.query("SELECT id,author_name,destination,content,rating,created_at FROM testimonials WHERE status='approved' ORDER BY created_at DESC LIMIT 20"); return NextResponse.json({ data: r.rows }); }
 export async function POST(request: Request) { const user = await currentUser(); if (!user || !db) return NextResponse.json({ error: 'Connexion requise.' }, { status: 401 }); const b = await request.json().catch(() => ({})); const rating = Number(b.rating); if (!b.name || !b.destination || !b.content || !Number.isInteger(rating) || rating < 1 || rating > 5) return NextResponse.json({ error: 'Témoignage incomplet.' }, { status: 400 }); await ensureSchema(); const r = await db.query('INSERT INTO testimonials(user_id,author_name,destination,content,rating) VALUES($1,$2,$3,$4,$5) RETURNING id,status', [user.id, String(b.name).slice(0,100), String(b.destination).slice(0,100), String(b.content).slice(0,1000), rating]); return NextResponse.json({ data: r.rows[0], message: 'Merci, votre témoignage sera publié après modération.' }, { status: 201 }); }

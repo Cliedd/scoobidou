@@ -1,20 +1,13 @@
-import { NextResponse } from 'next/server';
-import { db, ensureSchema } from '../../../lib/db';
-
-const labels: Record<string, string> = { visa_free: 'Sans visa', visa_on_arrival: 'Visa à l’arrivée', eta: 'eTA obligatoire', evisa: 'eVisa', visa_required: 'Visa requis', no_admission: 'Entrée non autorisée' };
-const colors: Record<string, string> = { visa_free: 'green', visa_on_arrival: 'green', eta: 'blue', evisa: 'blue', visa_required: 'amber', no_admission: 'red' };
-const datasetUrl = 'https://github.com/maxix7/visa-requirements-dataset';
-
+import { getRules, getCatalog } from '../../../entities/visa/server';
+export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
-  if (!db) return NextResponse.json({ data: [], meta: { source: 'postgresql', count: 0 } });
-  const { searchParams } = new URL(request.url); const passport = (searchParams.get('passport') || 'CM').toUpperCase();
-  const requirement = searchParams.get('requirement'); const search = searchParams.get('search')?.trim();
+  const params = new URL(request.url).searchParams;
   try {
-    await ensureSchema(); const values: string[] = [passport]; const where = ['vr.passport_code = $1'];
-    if (requirement && requirement !== 'all') { values.push(requirement); where.push(`vr.requirement = $${values.length}`); }
-    if (search) { values.push(`%${search}%`); where.push(`(c.name ILIKE $${values.length} OR c.code ILIKE $${values.length})`); }
-    const result = await db.query({ text: `SELECT c.code,c.name,vr.requirement,vr.max_stay_days,vr.source_name,vr.source_url,vr.verified_at,vr.confidence FROM visa_rules vr JOIN countries c ON c.code=vr.destination_code WHERE ${where.join(' AND ')} ORDER BY c.name`, values });
-    const data = result.rows.map(row => { const official = Boolean(row.source_url && row.source_name && !String(row.source_name).toLowerCase().includes('maxix7')); return { code: row.code.trim().toLowerCase(), name: row.name, requirement: row.requirement, status: labels[row.requirement] || row.requirement, color: colors[row.requirement] || 'amber', days: row.max_stay_days ? `${row.max_stay_days} jours` : 'Durée à vérifier', checked: row.verified_at, source: official ? row.source_name : 'Source officielle à confirmer', sourceUrl: official ? row.source_url : datasetUrl, sourceQuality: official ? 'official' : 'dataset', confidence: row.confidence }; });
-    return NextResponse.json({ data, meta: { passport, count: data.length, source: 'postgresql' } });
-  } catch (error) { console.error('Countries API failed:', error); return NextResponse.json({ error: 'Impossible de charger les pays depuis PostgreSQL.' }, { status: 503 }); }
+    if(params.get('catalog') === 'passports') return Response.json({data:await getCatalog()},{headers:{'Cache-Control':'no-store'}});
+    const passport = (params.get('passport') || 'CM').toUpperCase();
+    if(!/^[A-Z]{2}$/.test(passport)) return Response.json({error:'Code pays invalide.'},{status:400});
+    const requirement = params.get('requirement'), search = (params.get('search') || '').toLocaleLowerCase('fr');
+    const data = (await getRules(passport)).filter(r => (!requirement || requirement==='all' || r.requirement===requirement) && (!search || `${r.name} ${r.destination}`.toLocaleLowerCase('fr').includes(search))).map(r => ({...r,code:r.destination.toLowerCase(),days:r.days===null ? 'Durée non renseignée' : `${r.days} jours`,source:r.sourceName,checked:r.verifiedAt,color:r.requirement==='visa_free'?'green':r.requirement==='evisa'||r.requirement==='eta'?'blue':'amber'}));
+    return Response.json({data,meta:{passport,count:data.length,source:'postgresql',retrievedAt:new Date().toISOString()}},{headers:{'Cache-Control':'no-store'}});
+  } catch(error) { console.error('Country data unavailable',error instanceof Error?error.message:'Unknown database error'); return Response.json({error:'Impossible de charger les pays.'},{status:503}); }
 }

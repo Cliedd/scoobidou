@@ -1,5 +1,6 @@
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
+import { publicHeader, publicFooter, renderPage } from '../../../widgets/public-site/render';
 
 export const dynamic='force-dynamic';
 const screens:Record<string,string>={
@@ -12,17 +13,19 @@ const screens:Record<string,string>={
  community:'da9d82ee50304f628bda5b2956017fa9',
  dashboard:'7aad46b442d849ad8c5acab8a52c25be',
  auth:'125919af843f412d8ad87e4b4a76a2ef',
+ compare:'72711565378143cfa27d8ca50acc967f',
+ resources:'2dc43564e2904c38ace05fe4fc30f3b9',
+ 'data-policy':'2dc43564e2904c38ace05fe4fc30f3b9',
+ privacy:'125919af843f412d8ad87e4b4a76a2ef',
+ legal:'125919af843f412d8ad87e4b4a76a2ef',
+ terms:'125919af843f412d8ad87e4b4a76a2ef',
 };
-export async function GET(_request:Request,{params}:{params:{screen:string}}){
+export async function GET(request:Request,{params}:{params:{screen:string}}){
  const id=screens[params.screen];
  if(!id)return new Response('Unknown Stitch screen',{status:404});
  let html=await readFile(path.join(process.cwd(),'design/stitch',`${id}.html`),'utf8');
  html=html.replace(/<script src="https:\/\/cdn.tailwindcss.com[^\"]*"><\/script>/g,'').replace(/<script id="tailwind-config">[\s\S]*?<\/script>/g,`<link rel="stylesheet" href="/stitch/${id}.css">`);
- const paths:Record<string,string>={'carte-et-recherche':'atlas','fiche-exigences-et-audit':'visa','assistant-et-checklist-dossier':'assistant','calculateur-schengen-90-180j':'schengen','api-et-developpeurs':'developer','communaute-et-retours-dexperience':'community','tableau-de-bord-personnel':'dashboard','connexion-et-inscription':'auth'};
- Object.assign(paths,{'communaute':'community','tableau-de-bord':'dashboard','authentification':'auth'});
- const publicPaths:Record<string,string>={home:'/',atlas:'/',visa:'/visa',assistant:'/assistant',schengen:'/itinerary',developer:'/developer',community:'/community',dashboard:'/account',auth:'/login'};
- html=html.replace(/data-path="([^"]+)" href="#"/g,(_match,key)=>`data-path="${key}" href="${publicPaths[paths[key]||'home']}"`);
- html=html.replace('</body>', '<script src="/stitch/integration.js"></script></body>');
- html=html.replace('<main ', '<aside style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:#fff8f3;border-top:1px solid #8d7169;padding:8px 20px;font:12px Inter,sans-serif">Design Stitch : chiffres, dossiers et témoignages illustratifs. Confirmez les exigences auprès des autorités. <a href="/data-policy">Politique des données</a></aside><main ');
+ const head = html.split('</head>')[0].replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace(/<style\b[^>]*>[\s\S]*?<\/style>/g,'');
+ html = `${head}<link rel="stylesheet" href="/stitch/product.css"></head><body>${publicHeader(params.screen)}${renderPage(params.screen,request)}${publicFooter()}<script src="/stitch/integration.js" defer></script></body></html>`;
  return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"}});
 }

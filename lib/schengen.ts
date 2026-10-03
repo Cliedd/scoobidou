@@ -13,8 +13,10 @@ export type SchengenResult = {
 
 const DAY = 86400000;
 const dateOnly = (value: string | Date) => {
+  if(typeof value==='string' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error('Date invalide');
   const d = value instanceof Date ? new Date(value) : new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) throw new Error('Date invalide');
+  if(typeof value==='string' && d.toISOString().slice(0,10)!==value) throw new Error('Date invalide');
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 };
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -38,11 +40,10 @@ export function calculateSchengen(stays: Stay[], reference: string | Date = new 
   const resultStays = normalized.map((stay) => {
     let overlap = false;
     const start = dateOnly(stay.start); const end = dateOnly(stay.end);
-    for (let d = new Date(start); d <= end && d <= ref; d = new Date(d.getTime() + DAY)) {
-      if (d < windowStart) continue;
-      const key = iso(d); if (covered.has(key)) overlap = true; covered.add(key);
+    let uniqueDays=0;
+    for (let d = new Date(start > windowStart ? start : windowStart); d <= end && d <= ref; d = new Date(d.getTime() + DAY)) {
+      const key = iso(d); if (covered.has(key)) overlap = true; else uniqueDays++; covered.add(key);
     }
-    const uniqueDays = Array.from(covered).filter((key) => key >= stay.start && key <= stay.end).length;
     const country = stay.country || 'Espace Schengen';
     byCountry[country] = (byCountry[country] || 0) + Math.max(0, uniqueDays);
     return { ...stay, days: uniqueDays, overlap };

@@ -66,7 +66,7 @@ export async function authenticate(request: Request) {
 }
 
 export async function logUsage(key: KeyRecord, requestIdValue: string, endpoint: string, status: number) {
-  if (db) { await db.query('INSERT INTO api_usage(api_key_id,request_id,endpoint,status_code) VALUES($1,$2,$3,$4); UPDATE api_keys SET last_used_at=now() WHERE id=$1', [key.id, requestIdValue, endpoint, status]); }
+  if (db) { await db.query('INSERT INTO api_usage(api_key_id,request_id,endpoint,status_code) VALUES($1,$2,$3,$4)', [key.id, requestIdValue, endpoint, status]); await db.query('UPDATE api_keys SET last_used_at=now() WHERE id=$1',[key.id]); }
   else { memoryUsage.set(key.id, [...(memoryUsage.get(key.id) || []), Date.now()]); }
 }
 

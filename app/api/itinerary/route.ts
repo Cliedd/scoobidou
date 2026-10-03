@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { calculateFees, calculateSchengen, Stay } from '../../../lib/schengen';
+import { calculateSchengen, Stay } from '../../../lib/schengen';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     const stays = body.stays as Stay[];
     const calculation = calculateSchengen(stays, body.referenceDate || new Date());
-    return NextResponse.json({ ...calculation, estimatedFees: calculateFees(stays, Number(body.defaultFee) || 90), checklist: ['Passeport valide au moins 3 mois après la sortie', 'Assurance voyage couvrant tout l’espace Schengen', 'Justificatifs d’hébergement pour chaque pays', 'Preuve de ressources et billets de sortie', 'Vérifier le consulat du pays de séjour principal'] });
+    return NextResponse.json({ ...calculation, estimatedFees: null, checklist: ['Consulter les conditions officielles pour mon motif de voyage', 'Relever les documents exigés par l’autorité compétente', 'Vérifier les conditions de mon visa et la durée de séjour autorisée'] });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Données invalides' }, { status: 400 });
   }

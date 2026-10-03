@@ -1,12 +1,17 @@
 import { Pool } from 'pg';
 
-declare global { var passportlyPool: Pool | undefined }
+declare global { var passportlyPool: Pool | undefined; var passportlySchemaPromise: Promise<boolean> | undefined }
 
 export const db = process.env.DATABASE_URL
   ? (global.passportlyPool ??= new Pool({ connectionString: process.env.DATABASE_URL, max: 5, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 5_000 }))
   : null;
 
 export async function ensureSchema() {
+  if(!db) return false;
+  if(!global.passportlySchemaPromise) global.passportlySchemaPromise=initializeSchema().catch(error=>{global.passportlySchemaPromise=undefined;throw error;});
+  return global.passportlySchemaPromise;
+}
+async function initializeSchema() {
   if (!db) return false;
   await db.query(`
     CREATE TABLE IF NOT EXISTS countries (
@@ -168,6 +173,10 @@ export async function ensureSchema() {
       rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5), status TEXT NOT NULL DEFAULT 'pending',
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+    ALTER TABLE saved_checklists ADD COLUMN IF NOT EXISTS tasks JSONB NOT NULL DEFAULT '[]'::jsonb;
+    ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
+    ALTER TABLE visa_alerts ADD COLUMN IF NOT EXISTS baseline_requirement TEXT;
+    ALTER TABLE visa_alerts ADD COLUMN IF NOT EXISTS baseline_days INTEGER;
   `);
   return true;
 }
