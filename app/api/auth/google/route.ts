@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
+import { publicAppUrl } from '../../../../lib/public-url';
 
 const STATE_COOKIE = 'passportly_google_state';
 
@@ -12,7 +13,7 @@ function config() {
 
 export async function GET(request: Request) {
   const oauth = config();
-  if (!oauth) return NextResponse.redirect(new URL('/login?error=google_unavailable', request.url));
+  if (!oauth) return NextResponse.redirect(new URL('/login?error=google_unavailable', publicAppUrl(request.url)));
   const state = randomBytes(32).toString('base64url');
   const authorization = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   authorization.search = new URLSearchParams({

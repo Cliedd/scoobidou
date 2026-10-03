@@ -2,12 +2,13 @@ import { randomBytes, timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { passwordDigest, startSession } from '../../../../../lib/auth';
 import { db, ensureSchema } from '../../../../../lib/db';
+import { publicAppUrl } from '../../../../../lib/public-url';
 
 const STATE_COOKIE = 'passportly_google_state';
 const redirectUri = process.env.GOOGLE_REDIRECT_URI;
 
 function finish(request: NextRequest, path: string) {
-  const response = NextResponse.redirect(new URL(path, request.url));
+  const response = NextResponse.redirect(new URL(path, publicAppUrl(request.url)));
   response.cookies.set(STATE_COOKIE, '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/api/auth/google', expires: new Date(0) });
   response.headers.set('Cache-Control', 'no-store');
   return response;
