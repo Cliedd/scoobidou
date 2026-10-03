@@ -55,6 +55,8 @@ async function initializeSchema() {
     );
     ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_idx ON users(google_sub) WHERE google_sub IS NOT NULL;
     DO $$ BEGIN ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('user','editor','admin')); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,

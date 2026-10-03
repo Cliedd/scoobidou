@@ -26,6 +26,6 @@ export async function GET(request:Request,{params}:{params:{screen:string}}){
  let html=await readFile(path.join(process.cwd(),'design/stitch',`${id}.html`),'utf8');
  html=html.replace(/<script src="https:\/\/cdn.tailwindcss.com[^\"]*"><\/script>/g,'').replace(/<script id="tailwind-config">[\s\S]*?<\/script>/g,`<link rel="stylesheet" href="/stitch/${id}.css">`);
  const head = html.split('</head>')[0].replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace(/<style\b[^>]*>[\s\S]*?<\/style>/g,'');
- html = `${head}<link rel="stylesheet" href="/stitch/product.css"></head><body>${publicHeader(params.screen)}${renderPage(params.screen,request)}${publicFooter()}<script src="/stitch/integration.js" defer></script></body></html>`;
+ html = `${head}<link rel="stylesheet" href="/stitch/product.css"><link rel="stylesheet" href="/stitch/google-auth.css"></head><body>${publicHeader(params.screen)}${renderPage(params.screen,request)}${publicFooter()}<script src="/stitch/integration.js" defer></script></body></html>`;
  return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"}});
 }
