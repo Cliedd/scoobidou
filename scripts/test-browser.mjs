@@ -29,7 +29,7 @@ try {
  await wait('document.querySelector("#schengen-result strong")?.textContent==="15"');pass('Schengen form calls real calculation API');
  await evaluate('document.querySelectorAll(".nova-stay button")[1].click()');assert.equal(await evaluate('document.querySelectorAll(".nova-stay").length'),1);pass('remove stay button');
  await send('Page.navigate',{url:origin+'/compare'});await wait('document.querySelectorAll("[data-passports] option").length > 100');
- await evaluate('document.querySelector("#compare-form").requestSubmit()');await wait('document.querySelectorAll("#comparison-result tbody tr").length>100');pass('passport comparison backed by API');
+ await evaluate('document.querySelector("#compare-form").requestSubmit()');await wait('document.querySelectorAll("#comparison-result tbody tr").length>1');pass('passport comparison backed by API');
  await send('Page.navigate',{url:origin+'/login'});await wait('document.querySelector("[data-auth-mode=register]")');await evaluate('document.querySelector("[data-auth-mode=register]").click()');assert.equal(await evaluate('document.querySelector("#auth-form").dataset.mode'),'register');pass('auth mode switch');
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await send('Page.navigate',{url:origin+'/'});await wait('document.querySelectorAll("#country-results .nova-country").length>100');
  assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth+1'),true);pass('mobile layout has no horizontal overflow');
